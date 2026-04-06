@@ -1,0 +1,40 @@
+name: Apple Health Extract
+
+on:
+  workflow_dispatch:
+    inputs:
+      export_xml_path:
+        description: 'Path to export.xml within the repo (e.g. apple_health_export/export.xml)'
+        required: false
+        default: 'apple_health_export/export.xml'
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate export.xml exists
+        run: |
+          if [ ! -f "${{ inputs.export_xml_path }}" ]; then
+            echo "ERROR: export.xml not found at: ${{ inputs.export_xml_path }}"
+            echo "Put your Apple Health export.xml in the repo (private) or adjust the workflow input path."
+            exit 1
+          fi
+
+      - name: Extract calories + weight
+        run: |
+          python scripts/extract_apple_health.py --input "${{ inputs.export_xml_path }}" --outdir outputs
+
+      - name: Upload outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: apple-health-outputs
+          path: outputs/*
+
