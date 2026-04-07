@@ -28,7 +28,7 @@ def main() -> int:
     send_telegram_message(
         s.telegram_bot_token,
         s.telegram_chat_id,
-        "Recuerda pesarte hoy.",
+        "⚖️ Recordatorio de peso",
     )
     return 0
 
