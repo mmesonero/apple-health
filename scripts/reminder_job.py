@@ -23,6 +23,7 @@ def main() -> int:
     if not args.force and not is_mon_or_fri:
         return 0
 
+    # Only Telegram variables are required for this job.
     s = load_settings(args.env)
     send_telegram_message(
         s.telegram_bot_token,

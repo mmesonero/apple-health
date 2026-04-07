@@ -6,7 +6,6 @@ from datetime import date
 from extract_apple_health import extract_daily, write_csvs
 
 from config import load_settings
-from sheets_sync import upsert_daily_row
 from telegram import send_telegram_message
 
 
@@ -27,6 +26,15 @@ def main() -> int:
 
     s = load_settings(args.env)
 
+    if not s.export_xml_path:
+        if args.alert_if_missing_weight:
+            send_telegram_message(
+                s.telegram_bot_token,
+                s.telegram_chat_id,
+                "ALERTA: No está configurado `APPLE_HEALTH_EXPORT_XML`, así que no puedo comprobar tu peso de hoy.",
+            )
+        return 0
+
     calories_by_day, weight_by_day = extract_daily(s.export_xml_path)
     write_csvs(s.outdir, calories_by_day, weight_by_day)
 
@@ -34,14 +42,19 @@ def main() -> int:
     calories = calories_by_day.get(day)
     weight = weight_by_day.get(day)
 
-    upsert_daily_row(
-        service_account_json_path=s.google_service_account_json,
-        sheet_id=s.google_sheet_id,
-        worksheet_name=s.google_worksheet,
-        day=day,
-        calories_kcal=calories,
-        weight_kg=weight,
-    )
+    # Sync with Google Sheets only if credentials/config are present.
+    if s.google_sheet_id and s.google_service_account_json:
+        # Lazy import so the script can still run without Google Sheets dependencies configured.
+        from sheets_sync import upsert_daily_row
+
+        upsert_daily_row(
+            service_account_json_path=s.google_service_account_json,
+            sheet_id=s.google_sheet_id,
+            worksheet_name=s.google_worksheet or "Daily",
+            day=day,
+            calories_kcal=calories,
+            weight_kg=weight,
+        )
 
     if args.alert_if_missing_weight and weight is None:
         send_telegram_message(

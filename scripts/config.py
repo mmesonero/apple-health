@@ -8,12 +8,12 @@ from dotenv import load_dotenv
 
 @dataclass(frozen=True)
 class Settings:
-    export_xml_path: str
+    export_xml_path: str | None
     outdir: str
 
-    google_sheet_id: str
-    google_worksheet: str
-    google_service_account_json: str
+    google_sheet_id: str | None
+    google_worksheet: str | None
+    google_service_account_json: str | None
 
     telegram_bot_token: str
     telegram_chat_id: str
@@ -32,12 +32,16 @@ def load_settings(env_path: str | None = None) -> Settings:
             raise RuntimeError(f"Missing required env var: {name}")
         return v
 
+    def opt(name: str) -> str | None:
+        v = os.getenv(name, "").strip()
+        return v or None
+
     return Settings(
-        export_xml_path=req("APPLE_HEALTH_EXPORT_XML"),
+        export_xml_path=opt("APPLE_HEALTH_EXPORT_XML"),
         outdir=os.getenv("OUTDIR", "outputs").strip() or "outputs",
-        google_sheet_id=req("GOOGLE_SHEET_ID"),
-        google_worksheet=os.getenv("GOOGLE_WORKSHEET", "Daily").strip() or "Daily",
-        google_service_account_json=req("GOOGLE_SERVICE_ACCOUNT_JSON"),
+        google_sheet_id=opt("GOOGLE_SHEET_ID"),
+        google_worksheet=opt("GOOGLE_WORKSHEET"),
+        google_service_account_json=opt("GOOGLE_SERVICE_ACCOUNT_JSON"),
         telegram_bot_token=req("TELEGRAM_BOT_TOKEN"),
         telegram_chat_id=req("TELEGRAM_CHAT_ID"),
     )

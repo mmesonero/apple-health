@@ -1,0 +1,33 @@
+name: Telegram Weight Reminder
+
+on:
+  schedule:
+    # At 08:00 UTC on Monday and Friday (09:00 in Madrid, CET/CEST aware on GitHub side)
+    - cron: "0 8 * * 1,5"
+  workflow_dispatch: {}
+
+jobs:
+  reminder:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run reminder job
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python scripts/reminder_job.py
+
